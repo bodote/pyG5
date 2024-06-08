@@ -251,7 +251,7 @@ class pyG5Widget(QWidget):
 
 
 secWidth = 800
-secHeight = 480
+secHeight = 580
 
 
 class pyG5SecondaryWidget(pyG5Widget):
@@ -874,6 +874,41 @@ class pyG5SecondaryWidget(pyG5Widget):
                         )
 
                         self.setPen(1, grayColor)
+            # engine RPM Tachometer
+            rect = QRectF(advXBase, advYBase+110, 100, 100)
+            self.setPen(2, Qt.GlobalColor.white)
+            self.qp.setBrush(QBrush(Qt.GlobalColor.black))
+            
+            self.qp.drawEllipse(rect)
+
+            self.qp.translate(advXBase, advYBase+110)
+            self.setPen(1, Qt.GlobalColor.white)
+            self.qp.drawArc(
+                5,
+                5,
+                2 * 45,
+                2 * 45,
+                -40*16,
+                260 * 16,
+            )
+            self.setPen(4, Qt.GlobalColor.green)
+            self.qp.drawArc(
+                5,
+                5,
+                2 * 45,
+                2 * 45,
+                0*16,
+                90 * 16,
+            )
+            self.setPen(4, Qt.GlobalColor.red)
+            self.qp.drawArc(
+                5,
+                5,
+                2 * 45,
+                2 * 45,
+                -50*16,
+                50 * 16,
+            )
 
         self.qp.end()
 
@@ -907,7 +942,7 @@ class pyG5HSIWidget(pyG5Widget):
         headingBoxHeight = 22
 
         font = self.qp.font()
-        font.setPixelSize(headingBoxHeight - 2)
+        font.setPixelSize(headingBoxHeight -2)
         font.setBold(True)
         self.qp.setFont(font)
 
@@ -1299,7 +1334,10 @@ class pyG5HSIWidget(pyG5Widget):
                 ]
             )
         )
-
+        font = self.qp.font()
+        font.setPixelSize(22)
+        font.setBold(True)
+        self.qp.setFont(font)
         self.qp.drawText(
             QRectF(412, 336, 65, 18),
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
@@ -1393,6 +1431,7 @@ class pyG5HSIWidget(pyG5Widget):
         )
 
         # Draw the magnetic heading box
+        
         self.setPen(2, greyColor)
         self.qp.setBrush(QBrush(Qt.GlobalColor.black))
         self.qp.drawPolygon(
@@ -1696,7 +1735,7 @@ class pyG5HSIWidget(pyG5Widget):
         )
 
         font = self.qp.font()
-        font.setPixelSize(25)
+        font.setPixelSize(22)
         self.qp.setFont(font)
         if int(self._hsiSource) == 2:
             self.setPen(1, Qt.GlobalColor.magenta)
@@ -2074,7 +2113,7 @@ class pyG5AIWidget(pyG5Widget):
 
         self.qp.setBackgroundMode(Qt.BGMode.TransparentMode)
         font = self.qp.font()
-        font.setPixelSize(speedBoxHeight - 15)
+        font.setPixelSize(speedBoxHeight - 25)
 
         # set default font size
         self.qp.setFont(font)
@@ -2148,7 +2187,7 @@ class pyG5AIWidget(pyG5Widget):
         self.qp.drawPolygon(speedBox)
 
         font = self.qp.font()
-        font.setPixelSize(speedBoxHeight - 10)
+        font.setPixelSize(speedBoxHeight - 20)
         # set default font size
         self.qp.setFont(font)
 
@@ -2173,7 +2212,7 @@ class pyG5AIWidget(pyG5Widget):
         self.qp.drawRect(rect)
 
         font = self.qp.font()
-        font.setPixelSize(20)
+        font.setPixelSize(18)
         # set default font size
         self.qp.setFont(font)
 
