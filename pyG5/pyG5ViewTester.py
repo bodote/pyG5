@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
 
 from PySide6.QtGui import QKeySequence, QAction
 
-from pyG5.pyG5View import pyG5DualStackFMA, g5Width, g5Height, pyG5SecondaryWidget
+from pyG5.pyG5View import pyG5DualStackFMA, g5Width, g5Height, pyG5SecondaryWidget,pyG5SecondaryStackWidget
 
 sliderWdith = 300
 
@@ -109,7 +109,8 @@ if __name__ == "__main__":
     controlVLayout = QVBoxLayout()
     controlWidget.setLayout(controlVLayout)
 
-    secView = pyG5SecondaryWidget()
+    #secView = pyG5SecondaryWidget()
+    secView = pyG5SecondaryStackWidget()
     vlayout = QVBoxLayout()
     vlayout.addWidget(scrollArea)
     vlayout.addWidget(secView)
@@ -158,7 +159,7 @@ if __name__ == "__main__":
         makeControlDict("gpsgs", -30, 30),
         makeControlDict("gpshsisens", 0, 15),
         makeControlDict("parkBrake", 0, 1),
-        makeControlDict("engineRpm", 0, 1000),
+        makeControlDict("engineRpm", 0, 2800),
 
     ]
 
@@ -168,7 +169,8 @@ if __name__ == "__main__":
             slider.valueChanged.connect(getattr(g5View.pyG5AI, control["name"]))
             slider.valueChanged.connect(getattr(g5View.pyG5HSI, control["name"]))
             slider.valueChanged.connect(getattr(g5View.pyG5FMA, control["name"]))
-            slider.valueChanged.connect(getattr(secView, control["name"]))
+            slider.valueChanged.connect(getattr(secView.pyG5SecondaryWidget, control["name"]))
+            slider.valueChanged.connect(getattr(secView.engineGaugeWidget, control["name"]))
             print("Slider connected: {}".format(control["name"]))
         except Exception as inst:
             print("{} control not connected to view: {}".format(control["name"], inst))

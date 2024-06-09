@@ -32,6 +32,10 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from pyG5.pyG5Widget import pyG5Widget
+from pyG5.engineGaugeWidget import engineGaugeWidget
+
+
 g5Width = 480
 g5CenterX = g5Width / 2
 g5Height = 360
@@ -107,9 +111,10 @@ class pyG5DualStack(QWidget):
         # self.setFixedSize(480,800)
 
 
-class pyG5Widget(QWidget):
+class pyG5SecondaryStackWidget(QWidget):
     """Base class for the G5 wdiget view."""
-
+    secStackWidth = 800
+    secStackHeight = 800
     def __init__(self, parent=None):
         """g5Widget Constructor.
 
@@ -121,138 +126,24 @@ class pyG5Widget(QWidget):
         """
         QWidget.__init__(self, parent)
 
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.pyG5SecondaryWidget = pyG5SecondaryWidget()
+       
+        self.engineGaugeWidget = engineGaugeWidget()
+        # self.engineGaugeWidget.setFixedSize(g5Width, g5Height)
 
-        """property name, default value"""
-        propertyList = [
-            ("altitudeHold", 0),
-            ("altitudeVNAV", 0),
-            ("navSrc", 0),
-            ("apAltitude", 0),
-            ("apVS", 0),
-            ("apAirSpeed", 0),
-            ("apState", 0),
-            ("apMode", 0),
-            ("fuelPress", 0),
-            ("lowVolts", 0),
-            ("oilPres", 0),
-            ("parkBrake", 0),
-            ("lowVacuum", 0),
-            ("lowFuel", 0),
-            ("fuelSel", 4),
-            ("xpdrMode", 0),
-            ("xpdrCode", 5470),
-            ("trims", 0),
-            ("flaps", 0),
-            ("fuelpump", 0),
-            ("carbheat", 0),
-            ("gpsdmedist", 0),
-            ("gpshsisens", 0),
-            ("nav1type", 0),
-            ("nav2type", 0),
-            ("gpstype", 0),
-            ("avionicson", 1),
-            ("hsiSource", 0),
-            ("nav1fromto", 0),
-            ("nav2fromto", 0),
-            ("gpsfromto", 0),
-            ("nav1crs", 0),
-            ("nav1gsavailable", 0),
-            ("nav1gs", 0),
-            ("nav2crs", 0),
-            ("gpscrs", 0),
-            ("nav2gsavailable", 0),
-            ("nav2gs", 0),
-            ("nav1dft", 0),
-            ("nav2dft", 0),
-            ("nav1bearing", 0),
-            ("nav2bearing", 0),
-            ("nav1dme", 0),
-            ("nav2dme", 0),
-            ("gpsdft", 0),
-            ("gpsgsavailable", 0),
-            ("gpsvnavavailable", 0),
-            ("gpsgs", 0),
-            ("groundTrack", 0),
-            ("magHeading", 0),
-            ("windDirection", 0),
-            ("windSpeed", 0),
-            ("rollAngle", 0),
-            ("pitchAngle", 0),
-            ("gs", 0),
-            ("kias", 0),
-            ("kiasDelta", 0),
-            ("ktas", 0),
-            ("altitude", 0),
-            ("altitudeSel", 0),
-            ("alt_setting", 1013),
-            ("alt_setting_metric", 1),
-            ("vh_ind_fpm", 0),
-            ("turnRate", 0),
-            ("slip", 0),
-            ("headingBug", 0),
-            ("vs", 30),
-            ("vs0", 23),
-            ("vfe", 88),
-            ("vno", 118),
-            ("vne", 127),
-            ("engineRpm",0),
-        ]
+        self.vlayout = QVBoxLayout()
+        self.vlayout.addWidget(self.pyG5SecondaryWidget)
+        self.vlayout.addWidget(self.engineGaugeWidget)
+        self.vlayout.setSpacing(0)
+        self.vlayout.setContentsMargins(0, 0, 0, 0)
 
-        def _make_setter(val):
-            """Generate a setter function."""
+        self.setLayout(self.vlayout)
+        self.setFixedSize(self.secStackWidth, self.secStackHeight)
 
-            @wraps(val)
-            def setter(inputVal):
-                setattr(self, "_{}".format(val), inputVal)
-                self.repaint()
-
-            return setter
-
-        for prop in propertyList:
-            setattr(self, "_{}".format(prop[0]), prop[1])
-            setattr(self, "{}".format(prop[0]), _make_setter(prop[0]))
-
-    def setPen(self, width, color, style=Qt.PenStyle.SolidLine):
-        """Set the pen color and width."""
-        pen = self.qp.pen()
-        pen.setColor(color)
-        pen.setWidth(width)
-        pen.setStyle(style)
-        self.qp.setPen(pen)
-
-    @Slot(dict)
-    def drefHandler(self, retValues):
-        """Handle the DREF update."""
-        for idx, value in retValues.items():
-            try:
-                setattr(self, value[3], value[0])
-            except Exception as e:
-                self.logger.error("failed to set value {}: {}".format(value[5], e))
-
-    def getNavTypeString(self, navType, navIndex):
-        """getNavTypeString.
-
-        Args:
-            type: type number
-
-        Returns:
-            string
-        """
-        value = int(navType)
-
-        if value == 0:
-            return ""
-        elif value == 3:
-            return "VOR" + navIndex
-        elif value >= 4:
-            return "LOC" + navIndex
-
-        logging.error("Failed to decode navtype")
-
+        # self.setFixedSize(480,800)
 
 secWidth = 800
-secHeight = 580
+secHeight = 480
 
 
 class pyG5SecondaryWidget(pyG5Widget):
@@ -875,83 +766,6 @@ class pyG5SecondaryWidget(pyG5Widget):
                         )
 
                         self.setPen(1, grayColor)
-            # engineRpm Tachometer
-            rpmRadius = 40
-            rpmCenterX = advXBase+20+rpmRadius
-            rpmCenterY =  advYBase+130+rpmRadius
-            redArcDegree=45
-            greenArcDegrees=45
-            whiteArcDegrees=45+90
-            endRedDegree=0
-
-            font = self.qp.font()
-            font.setPixelSize(16)
-            font.setBold(False)
-            self.qp.setFont(font)
-            self.setPen(1, Qt.GlobalColor.white)
-            self.qp.drawText(
-                QRectF(
-                    rpmCenterX + rpmRadius*2,
-                    rpmCenterY ,
-                    80,
-                    40,
-                ),
-                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop,
-                "{} rpm".format(self._engineRpm),
-            )
-
-            
-
-            self.qp.translate(rpmCenterX, rpmCenterY)
-
-            rect = QRectF(advXBase, advYBase+110, 100, 100)
-            self.setPen(2, Qt.GlobalColor.white)
-            self.qp.setBrush(QBrush(Qt.GlobalColor.black))
-            
-            self.qp.drawEllipse(rect)
-
-          
-            self.setPen(1, Qt.GlobalColor.white)
-            self.qp.drawArc(
-                -rpmRadius,
-                -rpmRadius,
-                2 * rpmRadius,
-                2 * rpmRadius,
-                (endRedDegree+redArcDegree+greenArcDegrees)*16,
-                (endRedDegree+whiteArcDegrees) * 16,
-            )
-            self.setPen(4, Qt.GlobalColor.green)
-            self.qp.drawArc(
-               -rpmRadius,
-                -rpmRadius,
-                2 * rpmRadius,
-                2 * rpmRadius,
-                (endRedDegree+redArcDegree)*16,
-                (endRedDegree+greenArcDegrees) * 16,
-            )
-            self.setPen(4, Qt.GlobalColor.red)
-            self.qp.drawArc(
-               -rpmRadius,
-                -rpmRadius,
-                2 * rpmRadius,
-                2 * rpmRadius,
-                -endRedDegree*16,
-                redArcDegree * 16,
-            )
-            rpmPeripheralMarkers = [
-                90,
-                135,
-                180,
-                225,
-                270,
-                315,
-            ]
-            self.setPen(2, Qt.GlobalColor.white)
-
-            for marker in rpmPeripheralMarkers:
-                self.qp.rotate(-marker)
-                self.qp.drawLine(0, rpmRadius, 0, rpmRadius+10)
-                self.qp.rotate(marker)
 
 
         self.qp.end()

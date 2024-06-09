@@ -6,17 +6,19 @@
   "configurations": [
     {
       "name": "ViewTester",
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "module": "pyG5.pyG5ViewTester",
       "justMyCode": true
     },
     {
       "name": "App",
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "module": "pyG5.pyG5Main",
-      "args": ["-v"],
+      "args": [
+        "-v"
+      ],
       "justMyCode": true
     }
   ]
