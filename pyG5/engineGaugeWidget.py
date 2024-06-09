@@ -1,3 +1,8 @@
+"""
+Created on 9 Jun 2024.
+
+@author: Bodo Teichmann
+"""
 import logging
 
 from math import cos, radians, sin, sqrt, floor
