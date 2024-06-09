@@ -158,6 +158,8 @@ if __name__ == "__main__":
         makeControlDict("gpsgs", -30, 30),
         makeControlDict("gpshsisens", 0, 15),
         makeControlDict("parkBrake", 0, 1),
+        makeControlDict("engineRpm", 0, 1000),
+
     ]
 
     for control in controls:

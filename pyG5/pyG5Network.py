@@ -642,6 +642,14 @@ class pyG5NetWorkManager(QObject):
                 0,
                 "_vne",
             ),
+            (
+                "sim/flightmodel2/engines/engine_rotation_speed_rad_sec[0]",
+                1,
+                "rpm",
+                "engine rpm",
+                0,
+                "_engineRpm",
+            ),
         ]
 
         self.logger = logging.getLogger(self.__class__.__name__)

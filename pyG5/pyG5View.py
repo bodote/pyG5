@@ -196,6 +196,7 @@ class pyG5Widget(QWidget):
             ("vfe", 88),
             ("vno", 118),
             ("vne", 127),
+            ("engineRpm",0),
         ]
 
         def _make_setter(val):
@@ -874,41 +875,84 @@ class pyG5SecondaryWidget(pyG5Widget):
                         )
 
                         self.setPen(1, grayColor)
-            # engine RPM Tachometer
+            # engineRpm Tachometer
+            rpmRadius = 40
+            rpmCenterX = advXBase+20+rpmRadius
+            rpmCenterY =  advYBase+130+rpmRadius
+            redArcDegree=45
+            greenArcDegrees=45
+            whiteArcDegrees=45+90
+            endRedDegree=0
+
+            font = self.qp.font()
+            font.setPixelSize(16)
+            font.setBold(False)
+            self.qp.setFont(font)
+            self.setPen(1, Qt.GlobalColor.white)
+            self.qp.drawText(
+                QRectF(
+                    rpmCenterX + rpmRadius*2,
+                    rpmCenterY ,
+                    80,
+                    40,
+                ),
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop,
+                "{} rpm".format(self._engineRpm),
+            )
+
+            
+
+            self.qp.translate(rpmCenterX, rpmCenterY)
+
             rect = QRectF(advXBase, advYBase+110, 100, 100)
             self.setPen(2, Qt.GlobalColor.white)
             self.qp.setBrush(QBrush(Qt.GlobalColor.black))
             
             self.qp.drawEllipse(rect)
 
-            self.qp.translate(advXBase, advYBase+110)
+          
             self.setPen(1, Qt.GlobalColor.white)
             self.qp.drawArc(
-                5,
-                5,
-                2 * 45,
-                2 * 45,
-                -40*16,
-                260 * 16,
+                -rpmRadius,
+                -rpmRadius,
+                2 * rpmRadius,
+                2 * rpmRadius,
+                (endRedDegree+redArcDegree+greenArcDegrees)*16,
+                (endRedDegree+whiteArcDegrees) * 16,
             )
             self.setPen(4, Qt.GlobalColor.green)
             self.qp.drawArc(
-                5,
-                5,
-                2 * 45,
-                2 * 45,
-                0*16,
-                90 * 16,
+               -rpmRadius,
+                -rpmRadius,
+                2 * rpmRadius,
+                2 * rpmRadius,
+                (endRedDegree+redArcDegree)*16,
+                (endRedDegree+greenArcDegrees) * 16,
             )
             self.setPen(4, Qt.GlobalColor.red)
             self.qp.drawArc(
-                5,
-                5,
-                2 * 45,
-                2 * 45,
-                -50*16,
-                50 * 16,
+               -rpmRadius,
+                -rpmRadius,
+                2 * rpmRadius,
+                2 * rpmRadius,
+                -endRedDegree*16,
+                redArcDegree * 16,
             )
+            rpmPeripheralMarkers = [
+                90,
+                135,
+                180,
+                225,
+                270,
+                315,
+            ]
+            self.setPen(2, Qt.GlobalColor.white)
+
+            for marker in rpmPeripheralMarkers:
+                self.qp.rotate(-marker)
+                self.qp.drawLine(0, rpmRadius, 0, rpmRadius+10)
+                self.qp.rotate(marker)
+
 
         self.qp.end()
 
