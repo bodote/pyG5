@@ -38,6 +38,14 @@ and closes its port
 - init connection to xplane by sending all dataref's it whats to get messages about to xplane 
 ##### message send to xplane
 for each element of the datarefs :
+
+struct dref_struct_in
+{
+    xint dref_freq;
+    xint dref_sender_index; // the index the customer is using to define this dataref
+    xchr dref_string[400];
+};
+
 ```python 
  # ( dataref 0 , frequency 1, unit, description, num decimals to display in formatted output )
             (
