@@ -845,7 +845,7 @@ class pyG5MulticastListener(QObject):
             datagram = self.udpSock.receiveDatagram()
             if "BECN" in str(datagram.data())[2:6]:
                 self.xpInstance.emit(
-                    datagram.senderAddress(),
+                     
                     int.from_bytes(bytes(datagram.data())[19:21], byteorder="little"),
                 )
                 self.udpSock.leaveMulticastGroup(self.XPAddr)
