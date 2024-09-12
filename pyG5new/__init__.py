@@ -1,2 +1,2 @@
 """pyG5new package."""
-from .UdpMulticastReader import UdpMulticastReader
+from .udpMulticastReader import UdpMulticastReader

@@ -7,13 +7,12 @@ import logging
 import time
 import struct
 from PySide6.QtCore import  Slot, QObject,Signal,QByteArray
-from PySide6.QtNetwork import QUdpSocket, QHostAddress
+from PySide6.QtNetwork import QUdpSocket, QHostAddress,QAbstractSocket
 
 from PySide6.QtWidgets import   QApplication
 
-from pyG5new.UdpMulticastReader import UdpMulticastReader
-
-
+from pyG5new.udpMulticastReader import UdpMulticastReader
+from pyG5new.dataRefReader import DataRefReader
   
 class TestUdpReader(unittest.TestCase):
     recorded_port = None
@@ -21,10 +20,15 @@ class TestUdpReader(unittest.TestCase):
     rref_frequ = None
     rref_idx = None
     rref_str = None
-    rref_cmd = None
+    rref_cmd = "XX".encode()
+
+    @classmethod
+    def setUpClass(cls):
+        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        
+
     logger = None
     def setUp(self):
-        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.logger = logging.getLogger(self.__class__.__name__)
         self.app = QApplication.instance() or QApplication(sys.argv)
         self.multicast_reader = UdpMulticastReader()
@@ -32,7 +36,6 @@ class TestUdpReader(unittest.TestCase):
         self.recorded_port = None
         self.recorded_addr = None
       
-       
     def tearDown(self):
         self.logger.debug("tearDown")
         self.multicast_reader.udpReceiverSocket.close() #udpReceiverSocket.close()
@@ -44,15 +47,22 @@ class TestUdpReader(unittest.TestCase):
         self.logger.debug("start test_RREF_was_sent")
         message,dummyMessage = self.given_BECN_datagrams()
         self.given_connected_slot_to_get_addr_port_slot()
-        self.when_datagrams_are_send_and_events_processed(message, dummyMessage)
-        self.logger.debug("host:port: %s:%s",self.recorded_addr,self.recorded_port)
+        self.when_beacon_datagrams_are_send_and_events_processed(message, dummyMessage)
+        self.when_test_reader_is_connected_to_xplane_socket()
+        self.when_dataRefReader_is_initialized()
+        self.logger.debug("dataRefReader initialized should send to host:port: %s:%s",self.recorded_addr,self.recorded_port)
         self.then_RREF_datagram_was_send_to_xplane()
+       
+    def when_dataRefReader_is_initialized(self):
+        dataRefReader = DataRefReader(self.multicast_reader)
+        return
     
-    def then_RREF_datagram_was_send_to_xplane(self):
+    def when_test_reader_is_connected_to_xplane_socket(self):
         # listen on self.recorded_addr:self.recorded_port for RREF datagram:
         self.udp_test_socket_reader = UDPSocketReader(self.recorded_port)
         self.received_data = None
         def on_data_received(data):
+            self.logger.debug("on_data_received()")
             self.received_data = data.data().decode()
             self.rref_cmd, freq, idx, ref = struct.unpack("<5sii400s",self.received_data)
             if self.rref_cmd == b"RREF\x00" :
@@ -61,14 +71,19 @@ class TestUdpReader(unittest.TestCase):
                 self.rref_str = str
 
         self.udp_test_socket_reader.dataReceived.connect(on_data_received)
-
+        self.logger.debug("udp_test_socket_reader connected to on_data_received()")
+        return
+    def then_RREF_datagram_was_send_to_xplane(self):
         # Wait for the datagram to be processed
         def processEvents_and_check():
              self.app.processEvents()
+             self.logger.debug("self.app.processEvents()")
              if self.rref_cmd == b"RREF\x00":
                  return True
+             else:
+                 self.logger.debug("rref_cmd=%s",self.rref_cmd.decode())
              return False 
-        self.assertTrue(self.repeat_until_true(processEvents_and_check, 100, 0.100))
+        self.assertTrue(self.repeat_until_true(processEvents_and_check, 10, 0.100),msg="no RREF found after x*0.1 sec")
 
         self.assertEqual(self.rref_cmd , b"RREF\x00")
         # self.udp_test_socket_reader.disconnect()
@@ -79,7 +94,7 @@ class TestUdpReader(unittest.TestCase):
         message,dummyMessage = self.given_BECN_datagrams()
         self.given_connected_slot_to_get_addr_port_slot()
 
-        self.when_datagrams_are_send_and_events_processed(message, dummyMessage)
+        self.when_beacon_datagrams_are_send_and_events_processed(message, dummyMessage)
         
         self.then_addr_port_is_set_and_valid()
        
@@ -88,7 +103,7 @@ class TestUdpReader(unittest.TestCase):
         self.assertTrue(self.recorded_port != None)
         self.assertTrue(self.recorded_addr != None)
 
-    def when_datagrams_are_send_and_events_processed(self, message, dummyMessage):
+    def when_beacon_datagrams_are_send_and_events_processed(self, message, dummyMessage):
         self.senderUdpSocket.writeDatagram(dummyMessage, 
                                 self.multicast_reader.xplaneMulticastAddress, self.multicast_reader.xplaneMulticastPort)
         self.senderUdpSocket.writeDatagram(message, 
@@ -135,11 +150,12 @@ class TestUdpReader(unittest.TestCase):
         Any exception raised by func() will be propagated.
         """
         import time
-
+        self.logger.debug("repeat loop start")
         attempts = 0
         while max_attempts is None or attempts < max_attempts:
             if func():
                 return True
+            self.logger.debug("repeat loop false")
             attempts += 1
             if delay > 0:
                 time.sleep(delay)
@@ -153,12 +169,26 @@ class UDPSocketReader(QObject):
 
     def __init__(self, port, parent=None):
         super().__init__(parent)
+        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.socket = QUdpSocket(self)
-        self.socket.bind(QHostAddress.LocalHost, port)
+        self.socket.stateChanged.connect(self.stateChangedSlot)
+        self.socket.connected.connect(self.connectedSlot)
+        self.socket.bind(QHostAddress.SpecialAddress.Any, port)
+        self.logger.debug("UDPSocketReader.processPendingDatagrams socket bound to port ")
         self.socket.readyRead.connect(self.processPendingDatagrams)
+    
+    @Slot(QAbstractSocket.SocketState)
+    def stateChangedSlot(self,state):
+        self.logger.debug("socket state changed {}".format(state))
+
+    @Slot()
+    def connectedSlot(self):
+        self.logger.debug("socket state connected")
 
     @Slot()
     def processPendingDatagrams(self):
+        self.logger.debug("UDPSocketReader.processPendingDatagrams readyRead slot() called ")
         while self.socket.hasPendingDatagrams():
             datagram = self.socket.receiveDatagram()
             self.dataReceived.emit(datagram.data())

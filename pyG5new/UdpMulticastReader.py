@@ -11,7 +11,8 @@ from PySide6.QtWidgets import   QApplication
 
 class UdpMulticastReader(QObject):
     xPlaneAddrPortSignal = Signal(QHostAddress, int)
-    # xPlaneAddrPortSignal = Signal()
+    xplaneAddr = None
+    xplanePort = None
     
     xplaneMulticastAddress = QHostAddress("239.255.1.1")
     xplaneMulticastPort = 49707
@@ -46,7 +47,7 @@ class UdpMulticastReader(QObject):
         while self.udpReceiverSocket.hasPendingDatagrams():
             datagram = self.udpReceiverSocket.receiveDatagram()
             messageByteArray = datagram.data().data()
-            xplaneAddr = datagram.senderAddress()
+            self.xplaneAddr = datagram.senderAddress()
             if (messageByteArray == self.last_messageByteArray) : 
                 self.logger.info("duplicate message")
                 continue
@@ -58,9 +59,9 @@ class UdpMulticastReader(QObject):
             except:
                 self.logger.info("no BECN in multicast Datagram")
             if unpacked_tuple[0] == b'BECN\x00':
-                xplanePort = unpacked_tuple[5]
-                self.xPlaneAddrPortSignal.emit(xplaneAddr,xplanePort)
-                self.logger.debug("signal emitted: xplaneAddr=%s port=%s",xplaneAddr,xplanePort)
+                self.xplanePort = unpacked_tuple[5]
+                self.xPlaneAddrPortSignal.emit(self.xplaneAddr,self.xplanePort)
+                self.logger.debug("signal emitted: xplaneAddr=%s port=%s",self.xplaneAddr,self.xplanePort)
         self.udpReceiverSocket.leaveMulticastGroup(self.xplaneMulticastAddress)
         self.udpReceiverSocket.close()
         self.logger.debug("leaveMulticastGroup")
