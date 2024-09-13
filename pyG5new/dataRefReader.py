@@ -14,15 +14,15 @@ class DataRefReader(QObject):
     xplanePort = None
    
     
-    def __init__(self, udpMulticastReader:UdpMulticastReader, parent=None):
+    def __init__(self ): #udpMulticastReader:UdpMulticastReader, parent=None
         super().__init__()
-        self.senderUdpSocket = QUdpSocket()
-        # self.senderUdpSocket.stateChanged.connect(self.stateChangedSlot)
-        self.senderUdpSocket.connected.connect(self.connectedSlot)
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.debug("DataRefReader.__init__")
-        self.xplaneAddr = udpMulticastReader.xplaneAddr
-        self.xplanePort = udpMulticastReader.xplanePort
+        self.senderUdpSocket = QUdpSocket()
+        self.logger.debug("sender= QUdpSocket(); sender.stateChanged.connect(self.stateChangedSlotTest)")
+        self.senderUdpSocket.stateChanged.connect(self.stateChangedSlot)
+        # self.senderUdpSocket.connected.connect(self.connectedSlot)
+        self.xplaneAddr = QHostAddress.LocalHost#udpMulticastReader.xplaneAddr
+        self.xplanePort = 49000# udpMulticastReader.xplanePort
         assert self.xplaneAddr!=None
         self.connectXplane()
         return 
@@ -43,5 +43,5 @@ class DataRefReader(QObject):
         message = struct.pack("<5sii400s", cmd, freq, idx, ref.encode())     
         self.senderUdpSocket.writeDatagram(message, 
                                 self.xplaneAddr, self.xplanePort)
-        self.logger.debug("DataRefReader.connectXplane(): datagram was sent to %s:%s",self.xplaneAddr,self.xplanePort)
+        self.logger.debug("after senderUdpSocket.writeDatagram to %s:%s",self.xplaneAddr,self.xplanePort)
         return

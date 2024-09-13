@@ -32,46 +32,60 @@ class TestUdpReader(unittest.TestCase):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.app = QApplication.instance() or QApplication(sys.argv)
         self.multicast_reader = UdpMulticastReader()
-        self.senderUdpSocket = QUdpSocket()
-        self.recorded_port = None
-        self.recorded_addr = None
       
     def tearDown(self):
         self.logger.debug("tearDown")
-        self.multicast_reader.udpReceiverSocket.close() #udpReceiverSocket.close()
-        self.senderUdpSocket.close()
+        self.multicast_reader.udpReceiverSocket.close() #udpReceiverSocket.close() 
         del self.app
         self.logger.debug("tearDown finished")
-    
+
+    ############################
+    ####### TEST RREF SEND #####
     def test_RREF_was_sent(self):
         self.logger.debug("start test_RREF_was_sent")
-        message,dummyMessage = self.given_BECN_datagrams()
-        self.given_connected_slot_to_get_addr_port_slot()
-        self.when_beacon_datagrams_are_send_and_events_processed(message, dummyMessage)
+     #   message,dummyMessage = self.given_BECN_datagrams()
+     #   self.given_connected_slot_to_get_addr_port_slot()
+     #   self.when_beacon_datagrams_are_send_and_events_processed(message, dummyMessage)
         self.when_test_reader_is_connected_to_xplane_socket()
-        self.when_dataRefReader_is_initialized()
-        self.logger.debug("dataRefReader initialized should send to host:port: %s:%s",self.recorded_addr,self.recorded_port)
-        self.then_RREF_datagram_was_send_to_xplane()
+        # self.when_dataRefReader_is_initialized()
+        dataRefReader = DataRefReader() #DataRefReader(self.multicast_reader)
+        self.logger.debug("self.app.processEvents():")
+        self.app.processEvents()
+        self.logger.debug("after self.app.processEvents()")
+        # self.logger.debug("dataRefReader initialized should send to host:port: %s:%s",self.recorded_addr,self.recorded_port)
+        # self.then_RREF_datagram_was_send_to_xplane()
+        dataRefReader.senderUdpSocket.close()
+        self.logger.debug("end test_RREF_was_sent")
        
     def when_dataRefReader_is_initialized(self):
-        dataRefReader = DataRefReader(self.multicast_reader)
+        dataRefReader = DataRefReader() #DataRefReader(self.multicast_reader)
+        self.logger.debug("self.app.processEvents():")
+        self.app.processEvents()
+        self.logger.debug("after self.app.processEvents()")
+        self.logger.debug("after self.app.processEvents()2")
         return
     
     def when_test_reader_is_connected_to_xplane_socket(self):
         # listen on self.recorded_addr:self.recorded_port for RREF datagram:
+      
+        self.recorded_port = 49000
+        self.recorded_addr = QHostAddress.LocalHost
         self.udp_test_socket_reader = UDPSocketReader(self.recorded_port)
         self.received_data = None
+        self.logger.debug("UDPSocketReader initialized")
         def on_data_received(data):
             self.logger.debug("on_data_received()")
-            self.received_data = data.data().decode()
+            self.received_data = data.data()
             self.rref_cmd, freq, idx, ref = struct.unpack("<5sii400s",self.received_data)
             if self.rref_cmd == b"RREF\x00" :
                 self.rref_frequ = freq
                 self.rref_idx = idx
                 self.rref_str = str
+            self.logger.debug("end on_data_received()")    
+            return 
 
+        self.logger.debug("udp_test_socket_reader.dataReceived.connect(on_data_received)")
         self.udp_test_socket_reader.dataReceived.connect(on_data_received)
-        self.logger.debug("udp_test_socket_reader connected to on_data_received()")
         return
     def then_RREF_datagram_was_send_to_xplane(self):
         # Wait for the datagram to be processed
@@ -88,15 +102,17 @@ class TestUdpReader(unittest.TestCase):
         self.assertEqual(self.rref_cmd , b"RREF\x00")
         # self.udp_test_socket_reader.disconnect()
         return
-
-    
+    ############################
+    ####### TEST BECN ##########
     def test_receive_becn_data(self):
+        self.senderUdpSocket = QUdpSocket()
         message,dummyMessage = self.given_BECN_datagrams()
         self.given_connected_slot_to_get_addr_port_slot()
 
         self.when_beacon_datagrams_are_send_and_events_processed(message, dummyMessage)
         
         self.then_addr_port_is_set_and_valid()
+        self.senderUdpSocket.close()
        
 
     def then_addr_port_is_set_and_valid(self):
@@ -173,10 +189,10 @@ class UDPSocketReader(QObject):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.socket = QUdpSocket(self)
         self.socket.stateChanged.connect(self.stateChangedSlot)
-        self.socket.connected.connect(self.connectedSlot)
-        self.socket.bind(QHostAddress.SpecialAddress.Any, port)
-        self.logger.debug("UDPSocketReader.processPendingDatagrams socket bound to port ")
+        self.socket.bind(QHostAddress.LocalHost, port)
         self.socket.readyRead.connect(self.processPendingDatagrams)
+      #  self.socket.connected.connect(self.connectedSlot)
+        self.logger.debug("UDPSocketReader.__init__ ")
     
     @Slot(QAbstractSocket.SocketState)
     def stateChangedSlot(self,state):
