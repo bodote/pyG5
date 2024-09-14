@@ -1,9 +1,13 @@
 import sys
+from pyG5new import repeat_until_true
 from PySide6.QtCore import QObject, Signal, Slot, QByteArray
 from PySide6.QtNetwork import QHostAddress,QUdpSocket,QAbstractSocket
 from PySide6.QtWidgets import   QApplication
-import unittest
+import pytest
 import logging
+import time
+
+
 
 class UDPSocketReader(QObject):
     dataReceived = Signal(QByteArray)
@@ -30,25 +34,39 @@ class UDPSocketReader(QObject):
         while self.socket.hasPendingDatagrams():
             datagram = self.socket.receiveDatagram()
             self.dataReceived.emit(datagram.data())
+    def close(self):
+        self.socket.close()
 
-class TestUDPSocketReader(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+class TestUDPSocketReader:
    
     def setUp(self):
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.app = QApplication(sys.argv)
+        self.app = QApplication.instance() or QApplication(sys.argv)
         self.reader = UDPSocketReader(0)
         self.received_data = None
-        self.logger.debug("UDPSocketReader initialized")
-
-    def test_receive_datagram(self):
+        self.logger.debug("setUp initialized")
+    
+    def tearDown(self):
+        self.reader.close()
+        # del self.app
+        self.logger.debug("tearDown disconnected and closed")
+       
+    @pytest.fixture
+    def setup_teardown(self):
+        self.setUp()
+        yield
+        self.tearDown()
+        
+   
+    @pytest.mark.repeat(10)
+    def test_receive_datagram(self,setup_teardown):
         def on_data_received(data):
             self.logger.debug("on_data_received")
             self.received_data = data.data().decode()
             self.logger.debug("end on_data_received: %s",self.received_data)
             return
+        self.onDataReceived = on_data_received
         self.logger.debug("reader.dataReceived.connect(on_data_received)")
         self.reader.dataReceived.connect(on_data_received)
 
@@ -60,16 +78,16 @@ class TestUDPSocketReader(unittest.TestCase):
         self.sender.writeDatagram(test_message.encode(), QHostAddress.LocalHost, 49000)
         self.logger.debug("after sender.writeDatagram")
         # Wait for the datagram to be processed
-        self.logger.debug("self.app.processEvents():")
-        self.app.processEvents()
-        self.logger.debug("after processEvents()")
+        self.logger.debug("before self.app.processEvents():")
 
-        self.assertEqual(self.received_data, test_message)
+        def process_events_and_assert():
+            self.app.processEvents()
+            return self.received_data ==  test_message
+        repeat_until_true(self, process_events_and_assert, max_attempts=10, delay=0.1)
+        self.logger.debug("after processEvents(), sleep , processEvents()")
+        assert self.received_data ==  test_message
+        # self.reader.dataReceived.disconnect(on_data_received)
     
     @Slot(QAbstractSocket.SocketState)
     def stateChangedSlotTest(self,state):
         self.logger.debug("socket state changed {}".format(state))
-
-
-if __name__ == '__main__':
-    unittest.main()
