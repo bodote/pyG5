@@ -26,5 +26,3 @@ class TestRepeated:
         print(f"Running test iteration, value is {self.value}")
         assert self.value == 1
 
-if __name__ == '__main__':
-    unittest.main()
