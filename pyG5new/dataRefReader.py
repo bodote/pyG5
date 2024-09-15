@@ -24,7 +24,7 @@ class DataRefReader(QObject):
         self.xplaneAddr = QHostAddress.LocalHost#udpMulticastReader.xplaneAddr
         self.xplanePort = 49000# udpMulticastReader.xplanePort
         assert self.xplaneAddr!=None
-        self.connectXplane()
+        self.writeRequest()
         return 
     
     @Slot(QAbstractSocket.SocketState)
@@ -35,7 +35,7 @@ class DataRefReader(QObject):
     def connectedSlot(self):
         self.logger.debug("socket state connected")
         
-    def connectXplane(self):
+    def writeRequest(self):
         cmd = b"RREF\x00"
         freq = 30 
         idx = 1
@@ -45,3 +45,5 @@ class DataRefReader(QObject):
                                 self.xplaneAddr, self.xplanePort)
         self.logger.debug("after senderUdpSocket.writeDatagram to %s:%s",self.xplaneAddr,self.xplanePort)
         return
+    def close(self):
+        self.senderUdpSocket.close()

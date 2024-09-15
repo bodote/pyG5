@@ -1,3 +1,4 @@
+import time
 
 def repeat_until_true(self, func, max_attempts=None, delay=0):
     """
@@ -14,11 +15,11 @@ def repeat_until_true(self, func, max_attempts=None, delay=0):
     Raises:
     Any exception raised by func() will be propagated.
     """
-    import time
+   
     self.logger.debug("repeat loop start")
     attempts = 0
     while max_attempts is None or attempts < max_attempts:
-        if func():
+        if func(self):
             return True
         self.logger.debug("repeat loop false")
         attempts += 1

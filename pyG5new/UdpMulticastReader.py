@@ -14,22 +14,25 @@ class UdpMulticastReader(QObject):
     xplaneAddr = None
     xplanePort = None
     
-    xplaneMulticastAddress = QHostAddress("239.255.1.1")
-    xplaneMulticastPort = 49707
+   
     last_messageByteArray = None
   
     def __init__(self):
         super().__init__()
+        self.xplaneMulticastAddress = QHostAddress("239.255.1.1")
+        self.xplaneMulticastPort = 49707
         self.logger = logging.getLogger(self.__class__.__name__)
         self.udpReceiverSocket = QUdpSocket(self)
         self.udpReceiverSocket.stateChanged.connect(self.stateChangedSlot)
         self.udpReceiverSocket.connected.connect(self.connectedSlot)
         self.udpReceiverSocket.readyRead.connect(self.read_and_signal_xplane_addr_port)
-        self.udpReceiverSocket.bind(QHostAddress.AnyIPv4, self.xplaneMulticastPort,
-                         QUdpSocket.ShareAddress | QUdpSocket.ReuseAddressHint)
+        self.udpReceiverSocket.bind( 
+            QHostAddress.SpecialAddress.AnyIPv4,
+            self.xplaneMulticastPort,
+            QUdpSocket.BindFlag.ShareAddress,
+        )
         if not self.udpReceiverSocket.joinMulticastGroup(self.xplaneMulticastAddress):
             self.logger.warning("Failed to join multicast group")
-        
         self.logger.debug("UdpMulticastReader.__init__ ende")
 
     @Slot(QAbstractSocket.SocketState)
@@ -39,6 +42,9 @@ class UdpMulticastReader(QObject):
     @Slot()
     def connectedSlot(self):
         self.logger.debug("socket state connected")
+
+    def close(self):
+        self.udpReceiverSocket.close()
         
     
     

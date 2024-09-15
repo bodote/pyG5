@@ -5,7 +5,6 @@ from PySide6.QtNetwork import QHostAddress,QUdpSocket,QAbstractSocket
 from PySide6.QtWidgets import   QApplication
 import pytest
 import logging
-import time
 
 
 
@@ -59,7 +58,7 @@ class TestUDPSocketReader:
         self.tearDown()
         
    
-    @pytest.mark.repeat(10)
+    @pytest.mark.repeat(100)
     def test_receive_datagram(self,setup_teardown):
         def on_data_received(data):
             self.logger.debug("on_data_received")
